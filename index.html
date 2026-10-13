@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4fbff">
+  <title>星球數學隊｜五關闖關</title>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #193653;
+      --muted: #66809b;
+      --blue: #3288ed;
+      --blue-dark: #246fd0;
+      --paper: #ffffff;
+      --line: #e2edf6;
+      --mint: #dff8ec;
+      --shadow: 0 18px 50px rgba(41, 86, 125, .12);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(ellipse at 7% 8%, rgba(180, 231, 255, .7), transparent 30%),
+        radial-gradient(ellipse at 93% 86%, rgba(211, 247, 224, .72), transparent 29%),
+        #f4faff;
+      font-family: "Trebuchet MS", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+    }
+    button { font: inherit; }
+    .page { width: min(1120px, calc(100% - 36px)); margin: 0 auto; padding: 25px 0 34px; }
+    .topbar { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+    .brand { display:flex; align-items:center; gap:12px; }
+    .brand-mark {
+      display:grid; place-items:center; width:48px; height:48px; border-radius:16px;
+      background:linear-gradient(145deg,#ffdb78,#ffb942); box-shadow:0 7px 16px #ffcd6a55;
+      font-size:26px; transform:rotate(-5deg);
+    }
+    .brand h1 { margin:0; font-size:20px; letter-spacing:.04em; }
+    .brand p { margin:3px 0 0; font-size:12px; color:var(--muted); letter-spacing:.12em; }
+    .top-tag { display:flex; align-items:center; gap:8px; padding:9px 13px; border:1px solid #dcecf7; border-radius:999px; background:#ffffffb8; color:#55728f; font-size:13px; font-weight:700; }
+    .top-tag span { color:#38a47a; font-size:17px; }
+    .game-card { overflow:hidden; border:1px solid #e3edf5; border-radius:27px; background:var(--paper); box-shadow:var(--shadow); }
+    .game-head { display:grid; grid-template-columns:1fr auto; align-items:center; gap:18px; padding:23px 28px 19px; }
+    .eyebrow { margin:0 0 5px; color:#478bd4; font-size:11px; font-weight:900; letter-spacing:.18em; }
+    .game-head h2 { margin:0; font-size:23px; letter-spacing:.02em; }
+    .game-head .sub { margin:6px 0 0; color:var(--muted); font-size:13px; }
+    .stats { display:flex; align-items:stretch; gap:10px; }
+    .stat { min-width:110px; padding:10px 14px; border:1px solid var(--line); border-radius:15px; background:#f9fcff; }
+    .stat-label { display:block; margin-bottom:3px; color:#7690a8; font-size:10px; font-weight:800; letter-spacing:.12em; }
+    .stat-value { display:flex; align-items:center; gap:6px; font-size:19px; font-weight:900; }
+    #score { color:#e6a12b; }
+    #stage-count { color:#3185e3; }
+    .progress-row { display:flex; align-items:center; gap:12px; padding:0 28px 18px; }
+    .progress-label { flex:0 0 auto; color:#7990a5; font-size:11px; font-weight:800; letter-spacing:.08em; }
+    .progress-dots { display:flex; gap:8px; }
+    .progress-dot { width:10px; height:10px; border-radius:50%; background:#e5edf4; transition:transform .2s,background .2s; }
+    .progress-dot.current { background:#55b8ed; transform:scale(1.28); box-shadow:0 0 0 4px #55b8ed24; }
+    .progress-dot.done { background:#62c896; }
+    .question-strip { display:flex; align-items:center; justify-content:space-between; gap:16px; margin:0 20px 15px; padding:13px 18px; border:1px solid #e2f0fb; border-radius:17px; background:linear-gradient(100deg,#f0f9ff,#f2fff8); }
+    .question-left { display:flex; align-items:center; gap:13px; min-width:0; }
+    .question-icon { display:grid; flex:0 0 auto; place-items:center; width:37px; height:37px; border-radius:12px; background:#fff; box-shadow:0 3px 10px #5782a319; font-size:19px; }
+    .question-label { display:block; margin-bottom:2px; color:#7891a6; font-size:10px; font-weight:900; letter-spacing:.13em; }
+    #question { font-size:18px; font-weight:900; letter-spacing:.04em; }
+    .hint-pill { flex:0 0 auto; padding:8px 11px; border-radius:999px; background:#fff; color:#537591; font-size:11px; font-weight:800; }
+    .stage-wrap { position:relative; margin:0 20px; overflow:hidden; border:1px solid #d8eaf2; border-radius:20px; background:#b9e9ff; box-shadow:inset 0 2px 9px #5286a51b; }
+    #game { width:100%; aspect-ratio:1000 / 560; display:block; }
+    #game canvas { width:100% !important; height:100% !important; display:block; object-fit:contain; }
+    .screen-overlay { position:absolute; inset:0; display:grid; place-items:center; padding:20px; background:linear-gradient(180deg,#17395a42,#17395a73); backdrop-filter:blur(3px); transition:opacity .25s,visibility .25s; }
+    .screen-overlay.hidden { opacity:0; visibility:hidden; pointer-events:none; }
+    .overlay-card { width:min(400px,100%); padding:26px 25px 23px; border:1px solid #ffffffa8; border-radius:24px; background:#ffffffed; text-align:center; box-shadow:0 22px 54px #153e5d42; animation:pop-in .35s ease-out; }
+    @keyframes pop-in { from { opacity:0; transform:translateY(9px) scale(.97); } to { opacity:1; transform:translateY(0) scale(1); } }
+    .overlay-emoji { font-size:39px; line-height:1.1; }
+    .overlay-card h3 { margin:10px 0 7px; font-size:23px; }
+    .overlay-card p { margin:0 auto 18px; max-width:300px; color:#64809a; font-size:13px; line-height:1.75; }
+    .primary-btn { min-width:174px; padding:12px 18px; border:0; border-radius:13px; color:white; background:linear-gradient(180deg,#459cf5,#2d80e5); box-shadow:0 6px 0 #226ac4,0 10px 18px #327fe544; font-weight:900; cursor:pointer; transition:transform .12s,box-shadow .12s; }
+    .primary-btn:hover { transform:translateY(-2px); box-shadow:0 8px 0 #226ac4,0 13px 20px #327fe544; }
+    .primary-btn:active { transform:translateY(4px); box-shadow:0 2px 0 #226ac4; }
+    .overlay-note { display:block; margin-top:13px; color:#8297aa; font-size:10px; }
+    .stage-footer { display:flex; align-items:center; justify-content:space-between; gap:15px; padding:13px 24px 17px; }
+    #feedback { min-height:22px; color:#62809a; font-size:12px; font-weight:800; transition:color .2s; }
+    #feedback.good { color:#28a573; }
+    #feedback.bad { color:#e17b53; }
+    .controls-copy { color:#8296a8; font-size:11px; text-align:right; }
+    .bottom-row { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:17px 25px 19px; border-top:1px solid #edf2f6; }
+    .rule { display:flex; align-items:center; gap:10px; color:#5b7892; font-size:12px; font-weight:700; }
+    .rule-icon { display:grid; place-items:center; width:29px; height:29px; border-radius:10px; background:#fff2d8; font-size:15px; }
+    .rule strong { color:#2b7ed8; }
+    .restart-btn { display:flex; align-items:center; gap:7px; padding:9px 12px; border:1px solid #dce8f0; border-radius:11px; color:#668099; background:#fff; font-size:11px; font-weight:800; cursor:pointer; }
+    .restart-btn:hover { background:#f5faff; border-color:#bcd7ed; color:#347fce; }
+    .mobile-pad { display:none; }
+    .page-note { margin:13px 0 0; color:#9aabba; font-size:10px; text-align:center; letter-spacing:.04em; }
+    @media (max-width:700px) {
+      .page { width:min(100% - 20px,540px); padding-top:14px; }
+      .topbar { margin-bottom:13px; }
+      .brand-mark { width:41px; height:41px; border-radius:14px; font-size:22px; }
+      .brand h1 { font-size:17px; }
+      .top-tag { padding:7px 10px; font-size:11px; }
+      .game-card { border-radius:21px; }
+      .game-head { grid-template-columns:1fr; gap:13px; padding:17px 16px 13px; }
+      .game-head h2 { font-size:20px; }
+      .stats { width:100%; }
+      .stat { flex:1; min-width:0; padding:8px 11px; }
+      .stat-value { font-size:17px; }
+      .progress-row { padding:0 17px 13px; }
+      .question-strip { margin:0 10px 10px; padding:10px 12px; }
+      #question { font-size:16px; }
+      .hint-pill { max-width:130px; white-space:normal; text-align:center; font-size:10px; }
+      .stage-wrap { margin:0 10px; border-radius:14px; }
+      .stage-footer { padding:10px 13px 12px; }
+      #feedback { font-size:11px; }
+      .controls-copy { display:none; }
+      .bottom-row { align-items:flex-start; padding:13px 14px 15px; }
+      .rule { align-items:flex-start; font-size:11px; line-height:1.6; }
+      .rule-icon { flex:0 0 auto; }
+      .restart-btn { white-space:nowrap; }
+      .mobile-pad { display:flex; justify-content:center; padding:2px 0 12px; }
+      .pad-grid { display:grid; grid-template-columns:42px 42px 42px; grid-template-rows:35px 35px; gap:4px; }
+      .pad-btn { border:1px solid #d9e9f4; border-radius:10px; color:#5281a6; background:#f6fbff; font-weight:900; touch-action:none; }
+      .pad-btn:active,.pad-btn.pressed { color:#fff; border-color:#3889e4; background:#4c9bed; }
+      .pad-up { grid-column:2; grid-row:1; }
+      .pad-left { grid-column:1; grid-row:2; }
+      .pad-down { grid-column:2; grid-row:2; }
+      .pad-right { grid-column:3; grid-row:2; }
+    }
+    @media (max-width:390px) { .top-tag { max-width:110px; line-height:1.3; } .hint-pill { max-width:105px; } .bottom-row { gap:8px; } }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">🚀</div>
+        <div><h1>星球數學隊</h1><p>MATH ADVENTURE</p></div>
+      </div>
+      <div class="top-tag"><span>✦</span> 小小太空探險家集合！</div>
+    </header>
+
+    <section class="game-card" aria-label="星球數學隊遊戲">
+      <div class="game-head">
+        <div>
+          <p class="eyebrow">MISSION CONTROL</p>
+          <h2>答案星球大冒險</h2>
+          <p class="sub">移動太空隊長，找到正確答案星球！</p>
+        </div>
+        <div class="stats" aria-live="polite">
+          <div class="stat"><span class="stat-label">目前分數</span><span class="stat-value" id="score">⭐ 0</span></div>
+          <div class="stat"><span class="stat-label">闖關進度</span><span class="stat-value" id="stage-count">🚩 0 / 5</span></div>
+        </div>
+      </div>
+
+      <div class="progress-row" aria-label="五關進度">
+        <span class="progress-label">星球航線</span>
+        <div class="progress-dots" id="progress-dots">
+          <i class="progress-dot"></i><i class="progress-dot"></i><i class="progress-dot"></i><i class="progress-dot"></i><i class="progress-dot"></i>
+        </div>
+      </div>
+
+      <div class="question-strip">
+        <div class="question-left">
+          <div class="question-icon" aria-hidden="true">🧠</div>
+          <div><span class="question-label">本關任務</span><div id="question">準備好開始了嗎？</div></div>
+        </div>
+        <span class="hint-pill" id="hint">用方向鍵尋找答案</span>
+      </div>
+
+      <div class="stage-wrap">
+        <div id="game" aria-label="遊戲畫面"></div>
+        <div class="screen-overlay" id="overlay">
+          <div class="overlay-card">
+            <div class="overlay-emoji" id="overlay-emoji">🪐</div>
+            <h3 id="overlay-title">準備出發了嗎？</h3>
+            <p id="overlay-copy">算出任務答案，再操作隊長碰到正確數字。答對加 10 分，碰到錯誤答案會扣 5 分！</p>
+            <button class="primary-btn" id="start-btn">開始闖關　➜</button>
+            <span class="overlay-note">方向鍵 / WASD 移動　·　共 5 個星球任務</span>
+          </div>
+        </div>
+      </div>
+      <div class="stage-footer">
+        <div id="feedback" aria-live="polite">等你來挑戰！</div>
+        <div class="controls-copy">⌨️　使用方向鍵或 W A S D 移動隊長</div>
+      </div>
+      <div class="mobile-pad" aria-label="觸控移動按鈕">
+        <div class="pad-grid">
+          <button class="pad-btn pad-up" data-dir="up" aria-label="向上">▲</button>
+          <button class="pad-btn pad-left" data-dir="left" aria-label="向左">◀</button>
+          <button class="pad-btn pad-down" data-dir="down" aria-label="向下">▼</button>
+          <button class="pad-btn pad-right" data-dir="right" aria-label="向右">▶</button>
+        </div>
+      </div>
+      <div class="bottom-row">
+        <div class="rule"><span class="rule-icon">💡</span><span>答對一題 <strong>+10 分</strong>　・　碰到錯誤答案 <strong>−5 分</strong></span></div>
+        <button class="restart-btn" id="restart-btn" type="button">↻　重新開始</button>
+      </div>
+    </section>
+    <p class="page-note">一題一關，收集五顆答案星球，完成你的數學任務！</p>
+  </main>
+
+  <script>
+    (() => {
+      const WIDTH = 1000;
+      const HEIGHT = 560;
+      const TOTAL_LEVELS = 5;
+      const questions = [
+        { prompt: '8 + 5 = ?', answer: 13 },
+        { prompt: '16 − 7 = ?', answer: 9 },
+        { prompt: '6 × 4 = ?', answer: 24 },
+        { prompt: '32 ÷ 4 = ?', answer: 8 },
+        { prompt: '24 + 18 = ?', answer: 42 }
+      ];
+      const scoreEl = document.getElementById('score');
+      const stageEl = document.getElementById('stage-count');
+      const questionEl = document.getElementById('question');
+      const hintEl = document.getElementById('hint');
+      const feedbackEl = document.getElementById('feedback');
+      const overlayEl = document.getElementById('overlay');
+      const dots = [...document.querySelectorAll('.progress-dot')];
+      const touch = { up:false, down:false, left:false, right:false };
+      let gameScene;
+
+      function updateHUD(score, level) {
+        scoreEl.textContent = `⭐ ${score}`;
+        stageEl.textContent = `🚩 ${Math.max(0, Math.min(level, TOTAL_LEVELS))} / ${TOTAL_LEVELS}`;
+        dots.forEach((dot, index) => {
+          dot.className = 'progress-dot' + (index < level ? ' done' : '') + (index === level && level < TOTAL_LEVELS ? ' current' : '');
+        });
+      }
+      function setFeedback(message, mood = '') {
+        feedbackEl.textContent = message;
+        feedbackEl.className = mood;
+      }
+      function showOverlay(kind) {
+        const title = document.getElementById('overlay-title');
+        const copy = document.getElementById('overlay-copy');
+        const emoji = document.getElementById('overlay-emoji');
+        const button = document.getElementById('start-btn');
+        if (kind === 'complete') {
+          emoji.textContent = '🏆'; title.textContent = '任務完成，太空隊長！';
+          copy.textContent = `你成功通過全部 5 個星球任務，最後得分是 ${gameScene.score} 分。數學探險家就是你！`;
+          button.textContent = '再玩一次　↻';
+          questionEl.textContent = '五關任務全部完成！';
+          hintEl.textContent = '恭喜完成冒險';
+        } else if (kind === 'start') {
+          emoji.textContent = '🪐'; title.textContent = '準備出發了嗎？';
+          copy.textContent = '算出任務答案，再操作隊長碰到正確數字。答對加 10 分，碰到錯誤答案會扣 5 分！';
+          button.textContent = '開始闖關　➜';
+        } else {
+          emoji.textContent = '✨'; title.textContent = '太空隊長，出發！';
+          copy.textContent = '五顆答案星球都在等你。算出答案，帶隊長碰一碰正確數字吧！';
+          button.textContent = '繼續闖關　➜';
+        }
+        overlayEl.classList.remove('hidden');
+      }
+
+      class AdventureScene extends Phaser.Scene {
+        constructor() { super('Adventure'); this.score = 0; this.level = 0; this.started = false; this.busy = false; this.cards = []; this.colliders = []; }
+        create() {
+          gameScene = this;
+          this.drawWorld();
+          this.physics.world.setBounds(26, 84, WIDTH - 52, HEIGHT - 110);
+          this.makeCaptainTexture();
+          this.player = this.physics.add.sprite(WIDTH / 2, HEIGHT - 86, 'captain').setDepth(5);
+          this.player.setCollideWorldBounds(true);
+          this.player.body.setSize(34, 38).setOffset(15, 17);
+          this.cursors = this.input.keyboard.createCursorKeys();
+          this.wasd = this.input.keyboard.addKeys('W,A,S,D');
+          this.cameras.main.setBackgroundColor('#b9e9ff');
+          this.started = false;
+          this.updateScoreboard();
+        }
+        drawWorld() {
+          const g = this.add.graphics();
+          g.fillStyle(0xb9e9ff, 1).fillRect(0, 0, WIDTH, HEIGHT);
+          g.fillStyle(0xe5f8ff, .75).fillCircle(860, 93, 50);
+          g.fillStyle(0xffdf83, 1).fillCircle(860, 93, 34);
+          const cloud = (x, y, s) => {
+            g.fillStyle(0xffffff, .86);
+            g.fillEllipse(x, y + 13*s, 76*s, 22*s);
+            g.fillCircle(x - 19*s, y + 5*s, 15*s);
+            g.fillCircle(x, y - 2*s, 20*s);
+            g.fillCircle(x + 19*s, y + 7*s, 14*s);
+          };
+          cloud(172, 104, .85); cloud(470, 177, .62); cloud(721, 117, .72);
+          // Distant rolling hills and a soft green landing field.
+          g.fillStyle(0x8edbb1, 1);
+          g.fillEllipse(112, 433, 400, 170); g.fillEllipse(415, 448, 490, 180); g.fillEllipse(850, 430, 460, 185);
+          g.fillStyle(0x70cf9b, 1).fillRect(0, 435, WIDTH, 125);
+          g.fillStyle(0x8bdca9, 1);
+          g.fillEllipse(180, 496, 340, 93); g.fillEllipse(595, 517, 420, 76); g.fillEllipse(913, 494, 315, 98);
+          // Small flowers make the floor feel like a friendly planet.
+          for (const [x,y,c] of [[70,475,0xffe68c],[236,519,0xffa7a7],[380,468,0xffffff],[660,507,0xffe68c],[796,469,0xffffff],[947,520,0xffa7a7],[530,464,0xffc5e6],[122,533,0xffffff]]) {
+            g.fillStyle(c, .95).fillCircle(x, y, 4); g.fillStyle(0xf6b84b, 1).fillCircle(x, y, 1.5);
+          }
+          // A few little bushes sit along the horizon.
+          for (const x of [48, 313, 683, 954]) {
+            g.fillStyle(0x58bd86, 1).fillCircle(x, 422, 15); g.fillCircle(x + 14, 428, 12); g.fillCircle(x - 13, 429, 11);
+          }
+          g.lineStyle(3, 0xffffff, .42).strokeRoundedRect(10, 10, WIDTH - 20, HEIGHT - 20, 25);
+        }
+        makeCaptainTexture() {
+          const g = this.make.graphics({ x:0, y:0, add:false });
+          g.fillStyle(0x295a76, .18).fillEllipse(32, 57, 38, 9);
+          g.fillStyle(0xff9d54, 1).fillRoundedRect(17, 43, 12, 12, 5);
+          g.fillRoundedRect(35, 43, 12, 12, 5);
+          g.fillStyle(0x46b9d6, 1).fillRoundedRect(12, 25, 40, 28, 13);
+          g.fillStyle(0x328aaa, 1).fillRoundedRect(47, 31, 9, 17, 4);
+          g.fillStyle(0xffd776, 1).fillCircle(32, 24, 18);
+          g.fillStyle(0xffffff, 1).fillRoundedRect(12, 13, 40, 9, 5);
+          g.fillStyle(0xff8d6b, 1).fillTriangle(26, 11, 38, 11, 32, 1);
+          g.fillStyle(0x314e63, 1).fillCircle(26, 26, 2.2); g.fillCircle(38, 26, 2.2);
+          g.lineStyle(1.8, 0x9a6346, 1).beginPath().arc(32, 28, 6, .18, Math.PI - .18, false).strokePath();
+          g.fillStyle(0xffffff, 1).fillCircle(23, 32, 3); g.fillCircle(41, 32, 3);
+          g.generateTexture('captain', 64, 64); g.destroy();
+        }
+        update() {
+          if (!this.player || !this.started || this.busy) { if (this.player) this.player.setVelocity(0,0); return; }
+          const left = this.cursors.left.isDown || this.wasd.A.isDown || touch.left;
+          const right = this.cursors.right.isDown || this.wasd.D.isDown || touch.right;
+          const up = this.cursors.up.isDown || this.wasd.W.isDown || touch.up;
+          const down = this.cursors.down.isDown || this.wasd.S.isDown || touch.down;
+          const dx = (right ? 1 : 0) - (left ? 1 : 0);
+          const dy = (down ? 1 : 0) - (up ? 1 : 0);
+          const magnitude = (dx && dy) ? Math.SQRT1_2 : 1;
+          this.player.setVelocity(dx * 260 * magnitude, dy * 260 * magnitude);
+          if (dx < 0) this.player.setFlipX(true); else if (dx > 0) this.player.setFlipX(false);
+          if (dx || dy) this.player.rotation = Math.sin(this.time.now / 100) * .035;
+          else this.player.rotation = 0;
+        }
+        updateScoreboard() { updateHUD(this.score, this.level); }
+        clearCards() {
+          this.colliders.forEach(collider => this.physics.world.removeCollider(collider));
+          this.colliders = [];
+          this.cards.forEach(card => {
+            card.floatTween.stop(); this.tweens.remove(card.floatTween);
+            card.shape.destroy(); card.label.destroy(); card.sparkle.destroy(); card.shadow.destroy();
+          });
+          this.cards = [];
+        }
+        begin() {
+          if (this.level >= TOTAL_LEVELS) this.reset();
+          this.started = true; this.busy = false;
+          overlayEl.classList.add('hidden');
+          this.loadLevel();
+        }
+        reset() {
+          this.clearCards(); this.score = 0; this.level = 0; this.busy = false; this.started = false;
+          this.player.setPosition(WIDTH / 2, HEIGHT - 86); this.player.setVelocity(0,0);
+          updateHUD(this.score, this.level);
+          questionEl.textContent = '準備好開始了嗎？'; hintEl.textContent = '用方向鍵尋找答案';
+        }
+        loadLevel() {
+          this.clearCards(); this.busy = false;
+          this.player.setPosition(WIDTH / 2, HEIGHT - 77); this.player.setVelocity(0,0); this.player.setDepth(5);
+          const task = questions[this.level];
+          questionEl.textContent = task.prompt;
+          hintEl.textContent = `第 ${this.level + 1} 顆星球`;
+          this.updateScoreboard();
+          setFeedback('出發吧！找到正確數字星球。');
+          let choices = [task.answer, task.answer + 3, Math.max(0, task.answer - 4)];
+          if (new Set(choices).size < choices.length) choices = [task.answer, task.answer + 5, Math.max(0, task.answer - 2)];
+          Phaser.Utils.Array.Shuffle(choices);
+          const spots = [{x:174,y:220},{x:500,y:355},{x:826,y:210}];
+          const colors = [0xffd46a, 0x8bdcf5, 0xc1a2ff];
+          choices.forEach((value, index) => this.createAnswerCard(value, spots[index], colors[index], task.answer));
+        }
+        createAnswerCard(value, spot, accent, answer) {
+          const {x,y} = spot;
+          const shadow = this.add.ellipse(x + 2, y + 51, 145, 20, 0x38728a, .15).setDepth(1);
+          const shape = this.add.rectangle(x, y, 148, 84, 0xffffff, 1).setStrokeStyle(4, accent, 1).setDepth(2);
+          shape.setInteractive({ useHandCursor:false });
+          this.physics.add.existing(shape, true);
+          shape.body.setSize(148,84);
+          const sparkle = this.add.text(x - 54, y - 21, '✦', { fontFamily:'Arial', fontSize:'17px', color:'#' + accent.toString(16).padStart(6,'0') }).setDepth(3);
+          const label = this.add.text(x + 3, y + 2, String(value), { fontFamily:'Trebuchet MS, sans-serif', fontSize:'35px', fontStyle:'bold', color:'#244764', stroke:'#ffffff', strokeThickness:2 }).setOrigin(.5).setDepth(3);
+          shape.picked = false;
+          const collider = this.physics.add.overlap(this.player, shape, () => this.collectAnswer(shape, label, sparkle, shadow, value === answer), undefined, this);
+          const floatTween = this.tweens.add({ targets:[shape,label,sparkle,shadow], y:'-=5', duration:900 + (x % 3) * 80, yoyo:true, repeat:-1, ease:'Sine.easeInOut' });
+          this.cards.push({shape,label,sparkle,shadow,floatTween}); this.colliders.push(collider);
+        }
+        collectAnswer(shape, label, sparkle, shadow, correct) {
+          if (shape.picked || this.busy) return;
+          shape.picked = true; shape.body.enable = false;
+          if (correct) {
+            this.busy = true; this.score += 10; this.updateScoreboard();
+            this.player.setVelocity(0,0);
+            setFeedback('答對了！+10 分，飛往下一顆星球！', 'good');
+            this.tweens.add({ targets:[shape,label,sparkle,shadow], alpha:0, scale:.7, duration:220, onComplete:() => {
+              if (this.level < TOTAL_LEVELS - 1) { this.level++; this.loadLevel(); }
+              else { this.level = TOTAL_LEVELS; this.updateScoreboard(); this.started = false; this.busy = false; this.player.setVelocity(0,0); setFeedback('五關全部完成，太空任務成功！', 'good'); showOverlay('complete'); }
+            }});
+          } else {
+            this.score -= 5; this.updateScoreboard();
+            this.cameras.main.shake(130, .003);
+            setFeedback('哎呀，這是干擾星球！−5 分，再找找看。', 'bad');
+            this.tweens.add({ targets:[shape,label,sparkle,shadow], alpha:.25, duration:180 });
+          }
+        }
+      }
+
+      const game = new Phaser.Game({
+        type: Phaser.AUTO,
+        parent: 'game',
+        width: WIDTH,
+        height: HEIGHT,
+        backgroundColor: '#b9e9ff',
+        physics: { default:'arcade', arcade:{ debug:false } },
+        scale: { mode:Phaser.Scale.FIT, autoCenter:Phaser.Scale.CENTER_BOTH },
+        render: { antialias:true, pixelArt:false },
+        scene: [AdventureScene]
+      });
+      document.getElementById('start-btn').addEventListener('click', () => gameScene && gameScene.begin());
+      document.getElementById('restart-btn').addEventListener('click', () => {
+        if (!gameScene) return;
+        gameScene.reset(); showOverlay('start'); setFeedback('重新整裝，準備再出發！');
+      });
+      document.querySelectorAll('.pad-btn').forEach(button => {
+        const direction = button.dataset.dir;
+        const press = event => { event.preventDefault(); touch[direction] = true; button.classList.add('pressed'); };
+        const release = event => { event.preventDefault(); touch[direction] = false; button.classList.remove('pressed'); };
+        button.addEventListener('pointerdown', press);
+        button.addEventListener('pointerup', release);
+        button.addEventListener('pointerleave', release);
+        button.addEventListener('pointercancel', release);
+      });
+      window.addEventListener('keydown', event => {
+        if (event.key === 'Enter' && !overlayEl.classList.contains('hidden')) gameScene && gameScene.begin();
+      });
+    })();
+  </script>
+</body>
+</html>
