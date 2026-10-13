@@ -116,14 +116,13 @@
       .rule { align-items:flex-start; font-size:11px; line-height:1.6; }
       .rule-icon { flex:0 0 auto; }
       .restart-btn { white-space:nowrap; }
-      .mobile-pad { display:flex; justify-content:center; padding:2px 0 12px; }
-      .pad-grid { display:grid; grid-template-columns:42px 42px 42px; grid-template-rows:35px 35px; gap:4px; }
-      .pad-btn { border:1px solid #d9e9f4; border-radius:10px; color:#5281a6; background:#f6fbff; font-weight:900; touch-action:none; }
-      .pad-btn:active,.pad-btn.pressed { color:#fff; border-color:#3889e4; background:#4c9bed; }
-      .pad-up { grid-column:2; grid-row:1; }
-      .pad-left { grid-column:1; grid-row:2; }
-      .pad-down { grid-column:2; grid-row:2; }
-      .pad-right { grid-column:3; grid-row:2; }
+      .mobile-pad { display:flex; flex-direction:column; align-items:center; gap:5px; padding:3px 0 12px; user-select:none; }
+      .joystick { position:relative; width:132px; height:132px; flex:0 0 auto; overflow:hidden; border:1px solid #cbdfea; border-radius:50%; background:radial-gradient(circle at 50% 44%,#f8fdff,#e1f1fa 70%,#d6e9f5); box-shadow:inset 0 3px 9px #5d8daa20,0 4px 10px #5b88a21b; touch-action:none; cursor:grab; }
+      .joystick::before { content:""; position:absolute; inset:11px; border:1px dashed #9bbbd0a8; border-radius:50%; pointer-events:none; }
+      .joystick::after { content:""; position:absolute; left:50%; top:50%; width:7px; height:7px; border-radius:50%; background:#a8c8db; transform:translate(-50%,-50%); pointer-events:none; }
+      .joystick.active { cursor:grabbing; }
+      .joystick-handle { position:absolute; z-index:1; left:50%; top:50%; width:54px; height:54px; border:3px solid #fff; border-radius:50%; background:linear-gradient(145deg,#65baf7,#378be3); box-shadow:0 5px 11px #2871bb55,inset 0 1px 2px #ffffffb0; transform:translate(calc(-50% + var(--stick-x,0px)),calc(-50% + var(--stick-y,0px))); pointer-events:none; }
+      .joystick-help { color:#7890a5; font-size:10px; font-weight:800; letter-spacing:.04em; }
     }
     @media (max-width:390px) { .top-tag { max-width:110px; line-height:1.3; } .hint-pill { max-width:105px; } .bottom-row { gap:8px; } }
   </style>
@@ -182,13 +181,11 @@
         <div id="feedback" aria-live="polite">等你來挑戰！</div>
         <div class="controls-copy">⌨️　使用方向鍵或 W A S D 移動隊長</div>
       </div>
-      <div class="mobile-pad" aria-label="觸控移動按鈕">
-        <div class="pad-grid">
-          <button class="pad-btn pad-up" data-dir="up" aria-label="向上">▲</button>
-          <button class="pad-btn pad-left" data-dir="left" aria-label="向左">◀</button>
-          <button class="pad-btn pad-down" data-dir="down" aria-label="向下">▼</button>
-          <button class="pad-btn pad-right" data-dir="right" aria-label="向右">▶</button>
+      <div class="mobile-pad" aria-label="觸控搖桿">
+        <div class="joystick" id="joystick" role="group" aria-label="按住並拖曳搖桿移動太空隊長">
+          <div class="joystick-handle" id="joystick-handle"></div>
         </div>
+        <span class="joystick-help">按住搖桿並拖曳，控制隊長移動</span>
       </div>
       <div class="bottom-row">
         <div class="rule"><span class="rule-icon">💡</span><span>答對一題 <strong>+10 分</strong>　・　碰到錯誤答案 <strong>−5 分</strong></span></div>
@@ -217,7 +214,7 @@
       const feedbackEl = document.getElementById('feedback');
       const overlayEl = document.getElementById('overlay');
       const dots = [...document.querySelectorAll('.progress-dot')];
-      const touch = { up:false, down:false, left:false, right:false };
+      const touch = { x:0, y:0 };
       let gameScene;
 
       function updateHUD(score, level) {
@@ -316,14 +313,12 @@
         }
         update() {
           if (!this.player || !this.started || this.busy) { if (this.player) this.player.setVelocity(0,0); return; }
-          const left = this.cursors.left.isDown || this.wasd.A.isDown || touch.left;
-          const right = this.cursors.right.isDown || this.wasd.D.isDown || touch.right;
-          const up = this.cursors.up.isDown || this.wasd.W.isDown || touch.up;
-          const down = this.cursors.down.isDown || this.wasd.S.isDown || touch.down;
-          const dx = (right ? 1 : 0) - (left ? 1 : 0);
-          const dy = (down ? 1 : 0) - (up ? 1 : 0);
-          const magnitude = (dx && dy) ? Math.SQRT1_2 : 1;
-          this.player.setVelocity(dx * 260 * magnitude, dy * 260 * magnitude);
+          let dx = Number(this.cursors.right.isDown || this.wasd.D.isDown) - Number(this.cursors.left.isDown || this.wasd.A.isDown) + touch.x;
+          let dy = Number(this.cursors.down.isDown || this.wasd.S.isDown) - Number(this.cursors.up.isDown || this.wasd.W.isDown) + touch.y;
+          const magnitude = Math.hypot(dx, dy);
+          if (magnitude < .07) { dx = 0; dy = 0; }
+          else if (magnitude > 1) { dx /= magnitude; dy /= magnitude; }
+          this.player.setVelocity(dx * 260, dy * 260);
           if (dx < 0) this.player.setFlipX(true); else if (dx > 0) this.player.setFlipX(false);
           if (dx || dy) this.player.rotation = Math.sin(this.time.now / 100) * .035;
           else this.player.rotation = 0;
@@ -415,15 +410,41 @@
         if (!gameScene) return;
         gameScene.reset(); showOverlay('start'); setFeedback('重新整裝，準備再出發！');
       });
-      document.querySelectorAll('.pad-btn').forEach(button => {
-        const direction = button.dataset.dir;
-        const press = event => { event.preventDefault(); touch[direction] = true; button.classList.add('pressed'); };
-        const release = event => { event.preventDefault(); touch[direction] = false; button.classList.remove('pressed'); };
-        button.addEventListener('pointerdown', press);
-        button.addEventListener('pointerup', release);
-        button.addEventListener('pointerleave', release);
-        button.addEventListener('pointercancel', release);
+      const joystick = document.getElementById('joystick');
+      const joystickHandle = document.getElementById('joystick-handle');
+      let joystickPointer = null;
+      function moveJoystick(event) {
+        const rect = joystick.getBoundingClientRect();
+        const radius = rect.width / 2 - joystickHandle.offsetWidth / 2 - 7;
+        let dx = event.clientX - (rect.left + rect.width / 2);
+        let dy = event.clientY - (rect.top + rect.height / 2);
+        const distance = Math.hypot(dx, dy);
+        if (distance > radius) { dx *= radius / distance; dy *= radius / distance; }
+        touch.x = dx / radius;
+        touch.y = dy / radius;
+        joystick.style.setProperty('--stick-x', `${dx}px`);
+        joystick.style.setProperty('--stick-y', `${dy}px`);
+      }
+      function releaseJoystick(event) {
+        if (event && typeof event.pointerId === 'number' && joystickPointer !== event.pointerId) return;
+        joystickPointer = null; touch.x = 0; touch.y = 0;
+        joystick.classList.remove('active');
+        joystick.style.removeProperty('--stick-x'); joystick.style.removeProperty('--stick-y');
+      }
+      joystick.addEventListener('pointerdown', event => {
+        if (joystickPointer !== null) return;
+        event.preventDefault(); joystickPointer = event.pointerId;
+        joystick.setPointerCapture(event.pointerId); joystick.classList.add('active'); moveJoystick(event);
       });
+      joystick.addEventListener('pointermove', event => {
+        if (event.pointerId !== joystickPointer) return;
+        event.preventDefault(); moveJoystick(event);
+      });
+      joystick.addEventListener('pointerup', releaseJoystick);
+      joystick.addEventListener('pointercancel', releaseJoystick);
+      joystick.addEventListener('lostpointercapture', releaseJoystick);
+      window.addEventListener('blur', releaseJoystick);
+      document.addEventListener('visibilitychange', () => { if (document.hidden) releaseJoystick(); });
       window.addEventListener('keydown', event => {
         if (event.key === 'Enter' && !overlayEl.classList.contains('hidden')) gameScene && gameScene.begin();
       });
