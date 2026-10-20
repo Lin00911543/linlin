@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="認識遊戲式學習，探索十種教學遊戲機制與 Phaser 互動範例">
+  <title>玩出理解｜遊戲式學習與 Phaser 機制</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    * {box-sizing:border-box}
+    html {overflow-y:scroll;scroll-behavior:smooth}
+    body {margin:0;min-height:100vh;padding-top:68px;padding-left:calc(100vw - 100%);background:#f5f7fb;color:#172c45;font-family:Inter,"Noto Sans TC","Microsoft JhengHei",sans-serif}
+    .topNav {position:fixed;top:0;left:0;right:0;z-index:1030;background:rgba(255,255,255,.97);border-bottom:1px solid #e5eaf1}
+    .section,.designSection {scroll-margin-top:84px}
+    .navInner {display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:68px}
+    .brand {display:flex;align-items:center;gap:10px;color:#172c45;text-decoration:none;font-size:16px;font-weight:900;letter-spacing:.04em}
+    .brandMark {display:grid;place-items:center;width:35px;height:35px;border-radius:12px;background:#e2f5ee;color:#208d70;font-size:18px}
+    .navLinks {display:flex;align-items:center;gap:8px;margin:0;padding:0;list-style:none}
+    .navLinks a {display:block;padding:9px 12px;border-radius:10px;color:#566b82;text-decoration:none;font-size:13px;font-weight:750}
+    .navLinks a:hover {background:#f0f5fa;color:#176f91}
+    .hero {position:relative;overflow:hidden;margin:30px auto 24px;padding:48px clamp(22px,5vw,62px);border:1px solid #dceaf0;border-radius:28px;background:linear-gradient(118deg,#e8f7f3 0%,#eef6ff 55%,#fff6e8 100%)}
+    .hero::after {content:"";position:absolute;right:-35px;top:-68px;width:290px;height:290px;border:1px solid #68b8a420;border-radius:50%;box-shadow:0 0 0 28px #68b8a410,0 0 0 58px #68b8a409}
+    .heroContent {position:relative;z-index:1;max-width:720px}
+    .eyebrow {margin:0 0 13px;color:#258b79;font-size:11px;font-weight:900;letter-spacing:.2em;text-transform:uppercase}
+    .hero h1 {max-width:680px;margin:0;color:#183755;font-size:clamp(34px,6vw,62px);font-weight:900;line-height:1.12;letter-spacing:-.04em}
+    .hero h1 span {color:#25917d}
+    .heroText {max-width:630px;margin:18px 0 0;color:#557087;font-size:16px;line-height:1.9}
+    .heroActions {display:flex;align-items:center;gap:12px;margin-top:24px}
+    .hero .btn {padding:11px 17px;border-radius:12px;background:#218c7a;color:#fff;font-weight:800;box-shadow:0 6px 16px #218c7a26}
+    .hero .btn:hover {background:#167764;color:#fff}
+    .heroLink {color:#416980;text-decoration:none;font-size:13px;font-weight:800}
+    .heroLink:hover {color:#168e7a}
+    .heroMeta {display:flex;flex-wrap:wrap;gap:8px;margin-top:26px}
+    .heroMeta span {padding:7px 11px;border:1px solid #d5e8e7;border-radius:999px;background:#ffffffb8;color:#527084;font-size:11px;font-weight:800}
+    .section {padding:42px 0}
+    .sectionHead {display:flex;align-items:end;justify-content:space-between;gap:22px;margin-bottom:22px}
+    .sectionKicker {margin:0 0 7px;color:#238b79;font-size:10px;font-weight:900;letter-spacing:.18em}
+    .sectionHead h2 {margin:0;color:#193651;font-size:clamp(25px,4vw,36px);font-weight:900;letter-spacing:-.025em}
+    .sectionHead p {max-width:490px;margin:0;color:#708398;font-size:13px;line-height:1.8}
+    .definitionGrid {display:grid;grid-template-columns:1.12fr .88fr;gap:16px}
+    .definitionCard {height:100%;padding:25px;border:1px solid #e2eaf0;border-radius:19px;background:#fff;box-shadow:0 8px 25px #27486609}
+    .definitionCard h3 {margin:0 0 10px;font-size:18px;font-weight:900}
+    .definitionCard p {margin:0;color:#64798d;font-size:13px;line-height:1.9}
+    .cycle {display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:19px}
+    .cycleStep {padding:12px 8px;border-radius:13px;background:#f3f8fa;text-align:center}
+    .cycleStep b {display:block;color:#258a7a;font-size:12px}
+    .cycleStep span {display:block;margin-top:4px;color:#76899c;font-size:10px}
+    .principleList {display:grid;gap:10px;margin:16px 0 0;padding:0;list-style:none}
+    .principleList li {display:flex;gap:10px;color:#60768a;font-size:12px;line-height:1.7}
+    .principleList strong {color:#234762}
+    .principleIcon {display:grid;flex:0 0 25px;place-items:center;width:25px;height:25px;border-radius:9px;background:#e7f6ef;color:#279075;font-size:12px;font-weight:900}
+    .mechanisms {padding-top:36px}
+    .mechanismGrid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+    .mechanismCard {overflow:hidden;border:1px solid #e1e9f0;border-radius:20px;background:#fff;box-shadow:0 8px 26px #2849650a}
+    .mechanismTop {display:flex;align-items:flex-start;gap:13px;padding:20px 20px 15px}
+    .number {display:grid;flex:0 0 39px;place-items:center;width:39px;height:39px;border-radius:13px;background:#e9f5f2;color:#208773;font-size:15px;font-weight:950}
+    .mechanismInfo {min-width:0;flex:1}
+    .mechanismInfo h3 {margin:0;color:#1a3954;font-size:18px;font-weight:900}
+    .mechanismInfo p {margin:6px 0 0;color:#72869a;font-size:12px;line-height:1.75}
+    .typeTag {display:inline-block;margin-top:8px;padding:5px 9px;border-radius:999px;background:#f1f5f8;color:#60798c;font-size:10px;font-weight:850}
+    .exampleBar {display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 20px 12px;padding-top:12px;border-top:1px solid #edf1f4}
+    .exampleBar strong {color:#375b74;font-size:12px}
+    .exampleBar a {color:#198675;text-decoration:none;font-size:11px;font-weight:850}
+    .exampleBar a:hover {text-decoration:underline}
+    .frameWrap {position:relative;overflow:hidden;margin:0 12px 12px;border:1px solid #dce7ee;border-radius:13px;background:#edf3f7}
+    .frameWrap iframe {display:block;width:100%;height:390px;border:0;background:#fff}
+    .frameHint {margin:0;padding:9px 12px;background:#f7fafc;color:#718598;font-size:10px;line-height:1.6}
+    .designSection {padding:40px 0 55px}
+    .designPanel {display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:26px;border:1px solid #deebe8;border-radius:20px;background:linear-gradient(120deg,#f0faf5,#f4f8ff)}
+    .designPanel h2 {margin:0 0 8px;font-size:22px;font-weight:900}
+    .designPanel p {margin:0;color:#667e90;font-size:12px;line-height:1.85}
+    .designList {display:grid;gap:9px;margin:0;padding:0;list-style:none}
+    .designList li {display:flex;align-items:flex-start;gap:9px;color:#5f778b;font-size:12px;line-height:1.7}
+    .designList b {color:#238b79}
+    .footer {padding:20px 0 28px;border-top:1px solid #e2e9ef;color:#8292a2;font-size:10px;text-align:center}
+    @media (max-width:760px) {
+      body {padding-top:112px}
+      .section,.designSection {scroll-margin-top:124px}
+      .navInner {align-items:flex-start;flex-direction:column;gap:8px;padding-top:13px;padding-bottom:12px}
+      .navLinks {width:100%;flex-wrap:wrap;gap:0}
+      .navLinks a {padding:8px 10px;font-size:11px}
+      .hero {margin-top:17px;padding:33px 22px;border-radius:21px}
+      .heroText {font-size:14px}
+      .section {padding:30px 0}
+      .sectionHead {align-items:flex-start;flex-direction:column;gap:8px}
+      .definitionGrid {grid-template-columns:1fr}
+      .mechanismGrid {grid-template-columns:1fr}
+      .frameWrap iframe {height:340px}
+      .designPanel {grid-template-columns:1fr;padding:21px}
+    }
+    @media (max-width:420px) {
+      .cycle {grid-template-columns:repeat(2,1fr)}
+      .heroActions {align-items:flex-start;flex-direction:column}
+      .frameWrap iframe {height:310px}
+      .mechanismTop {padding:16px 15px 12px}
+      .exampleBar {margin-right:15px;margin-left:15px}
+    }
+  </style>
+</head>
+<body>
+  <nav class="topNav" aria-label="主要導覽">
+    <div class="container navInner">
+      <a class="brand" href="#top"><span class="brandMark">玩</span><span>玩出理解</span></a>
+      <ul class="navLinks">
+        <li><a href="#meaning">認識遊戲式學習</a></li>
+        <li><a href="#mechanisms">十種遊戲機制</a></li>
+        <li><a href="#design">教學設計提示</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main class="container" id="top">
+    <header class="hero">
+      <div class="heroContent">
+        <p class="eyebrow">Learning by playing</p>
+        <h1>讓知識變成<br><span>值得完成的任務</span></h1>
+        <p class="heroText">遊戲式學習把學習目標放進一段有規則、有回饋、有選擇的體驗。學生在嘗試、判斷與修正中練習知識，老師則能看見他們如何思考。</p>
+        <div class="heroActions">
+          <a class="btn" href="#mechanisms">探索十種機制</a>
+          <a class="heroLink" href="#meaning">先看遊戲式學習的核心　↓</a>
+        </div>
+        <div class="heroMeta"><span>目標清楚</span><span>即時回饋</span><span>允許重試</span><span>知識用得上</span></div>
+      </div>
+    </header>
+
+    <section class="section" id="meaning">
+      <div class="sectionHead">
+        <div><p class="sectionKicker">01　CONCEPT</p><h2>什麼是遊戲式學習</h2></div>
+        <p>不是把遊戲放在課堂裡就完成了。關鍵是讓遊戲中的行動與回饋，真的幫助學生達成學習目標。</p>
+      </div>
+      <div class="definitionGrid">
+        <article class="definitionCard">
+          <h3>把練習變成一段有意義的體驗</h3>
+          <p>遊戲式學習運用遊戲規則、挑戰、角色或情境，讓學生在安全的環境裡練習概念與技能。學生不只回答問題，也要做決定、觀察結果，並用結果調整下一步。</p>
+          <div class="cycle" aria-label="遊戲式學習循環">
+            <div class="cycleStep"><b>設定目標</b><span>要理解什麼</span></div>
+            <div class="cycleStep"><b>接受挑戰</b><span>做出選擇</span></div>
+            <div class="cycleStep"><b>收到回饋</b><span>看見結果</span></div>
+            <div class="cycleStep"><b>反思遷移</b><span>用在新情境</span></div>
+          </div>
+        </article>
+        <article class="definitionCard">
+          <h3>設計時先抓住三件事</h3>
+          <ul class="principleList">
+            <li><span class="principleIcon">A</span><span><strong>目標先於玩法</strong><br>每個任務都要對應一項知識或能力。</span></li>
+            <li><span class="principleIcon">B</span><span><strong>回饋能引導下一步</strong><br>讓學生知道發生什麼，以及可以怎麼修正。</span></li>
+            <li><span class="principleIcon">C</span><span><strong>遊戲後整理學習</strong><br>帶學生說明策略、錯誤與概念之間的關係。</span></li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section mechanisms" id="mechanisms">
+      <div class="sectionHead">
+        <div><p class="sectionKicker">02　MECHANICS</p><h2>十種可用於教學的遊戲機制</h2></div>
+        <p>每個框內都是 Phaser 範例。可直接操作與觀察玩法，再想想要讓學生透過它練習什麼。</p>
+      </div>
+      <div class="mechanismGrid">
+        <article class="mechanismCard">
+          <div class="mechanismTop"><span class="number">01</span><div class="mechanismInfo"><h3>平台跳躍與蒐集</h3><p>角色在平台間移動並取得目標物，適合設計路徑規劃、順序判斷與逐步解鎖任務。</p><span class="typeTag">移動探索</span></div></div>
+          <div class="exampleBar"><strong>Phaser 範例　First Game</strong><a href="https://labs.phaser.io/phaser4-view.html?src=src%2Fgames%2Ffirstgame%2Fpart10.js" target="_blank" rel="noopener">另開範例 ↗</a></div>
+          <div class="frameWrap"><iframe loading="lazy" title="平台跳躍與蒐集 Phaser 遊戲範例" src="https://labs.phaser.io/phaser4-view.html?src=src%2Fgames%2Ffirstgame%2Fpart10.js" allow="fullscreen" referrerpolicy="strict-origin-when-cross-origin"></iframe><p class="frameHint">操作方式依範例畫面為準。可把星星改成待答題目或任務線索。</p></div>
+        </article>
+        <article class="mechanismCard">
+          <div class="mechanismTop"><span class="number">02</span><div class="mechanismInfo"><h3>追蹤移動與生存</h3><p>玩家持續調整角色位置以避開威脅、蒐集物品，適合練習快速辨識、持續注意與風險判斷。</p><span class="typeTag">閃避蒐集</span></div></div>
+          <div class="exampleBar"><strong>Phaser 範例　Avoid the Germs</strong><a href="https://labs.phaser.io/phaser4-view.html?src=src%2Fgames%2Favoid%20the%20germs%2Fmain.js" target="_blank" rel="noopener">另開範例 ↗</a></div>
+          <div class="frameWrap"><iframe loading="lazy" title="追蹤移動與生存 Phaser 遊戲範例" src="https://labs.phaser.io/phaser4-view.html?src=src%2Fgames%2Favoid%20the%20germs%2Fmain.js" allow="fullscreen" referrerpolicy="strict-origin-when-cross-origin"></iframe><p class="frameHint">角色會跟隨指標移動。可將蒐集物設為答對的題目或字詞。</p></div>
+        </article>
+        <article class="mechanismCard">
+          <div class="mechanismTop"><span class="number">03</span><div class="mechanismInfo"><h3>限時點擊與反應</h3><p>在倒數結束前辨認並點選目標，適合做短回合的提取練習、快速分類與熟練度挑戰。</p><span class="typeTag">限時挑戰</span></div></div>
+          <div class="exampleBar"><strong>Phaser 範例　Coin Clicker</strong><a href="https://labs.phaser.io/phaser4-view.html?src=src%2Fgames%2Fcoin%20clicker%2Fmain.js" target="_blank" rel="noopener">另開範例 ↗</a></div>
+          <div class="frameWrap"><iframe loading="lazy" title="限時點擊與反應 Phaser 遊戲範例" src="https://labs.phaser.io/phaser4-view.html?src=src%2Fgames%2Fcoin%20clicker%2Fmain.js" allow="fullscreen" referrerpolicy="strict-origin-when-cross-origin"></iframe><p class="frameHint">硬幣會移動並彈跳。教學設計可加入讀題後再點選答案的步驟。</p></div>
+        </article>
+        <article class="mechanismCard">
+          <div class="mechanismTop"><span class="number">04</span><div class="mechanismInfo"><h3>翻牌記憶與配對</h3><p>翻開線索後記住位置，再找出成對內容。適合字詞與解釋、符號與概念、問題與答案配對。</p><span class="typeTag">記憶提取</span></div></div>
+          <div class="exampleBar"><strong>Phaser 範例　Card Memory</strong><a href="https://labs.phaser.io/phaser4-view.html?src=src%2Fgames%2Fcard%20memory%2Fmain.js" target="_blank" rel="noopener">另開範例 ↗</a></div>
+          <div class="frameWrap"><iframe loading="lazy" title="翻牌記憶與配對 Phaser 遊戲範例" src="https://labs.phaser.io/phaser4-view.html?src=src%2Fgames%2Fcard%20memory%2Fmain.js" allow="fullscreen" referrerpolicy="strict-origin-when-cross-origin"></iframe><p class="frameHint">每翻兩張牌就檢查一次是否相同。可將圖卡換成課程中的關鍵概念。</p></div>
+        </article>
+        <article class="mechanismCard">
+          <div class="mechanismTop"><span class="number">05</span><div class="mechanismInfo"><h3>即時瞄準與投擲</h3><p>判斷目標位置並控制攻擊時機，適合把觀察、預測、角度或因果判斷變成可操作的練習。</p><span class="typeTag">瞄準投擲</span></div></div>
+          <div class="exampleBar"><strong>Phaser 範例　Snowmen Attack</strong><a href="https://labs.phaser.io/phaser4-view.html?src=src%2Fgames%2Fsnowmen%20attack%2Fmain.js" target="_blank" rel="noopener">另開範例 ↗</a></div>
+          <div class="frameWrap"><iframe loading="lazy" title="即時瞄準與投擲 Phaser 遊戲範例" src="https://labs.phaser.io/phaser4-view.html?src=src%2Fgames%2Fsnowmen%20attack%2Fmain.js" allow="fullscreen" referrerpolicy="strict-origin-when-cross-origin"></iframe><p class="frameHint">玩家在軌道間移動並投擲雪球。可把命中條件連結到分類或概念辨識。</p></div>
+        </article>
+        <article class="mechanismCard">
+          <div class="mechanismTop"><span class="number">06</span><div class="mechanismInfo"><h3>反彈碰撞與角度控制</h3><p>利用球、牆與板子的碰撞改變運動方向，適合探索角度、速度、預測與簡單物理規則。</p><span class="typeTag">物理互動</span></div></div>
+          <div class="exampleBar"><strong>Phaser 範例　Breakout</strong><a href="https://labs.phaser.io/phaser4-view.html?src=src%2Fgames%2Fbreakout%2Fbreakout.js" target="_blank" rel="noopener">另開範例 ↗</a></div>
+          <div class="frameWrap"><iframe loading="lazy" title="反彈碰撞與角度控制 Phaser 遊戲範例" src="https://labs.phaser.io/phaser4-view.html?src=src%2Fgames%2Fbreakout%2Fbreakout.js" allow="fullscreen" referrerpolicy="strict-origin-when-cross-origin"></iframe><p class="frameHint">拖動板子接住球並擊破磚塊。可在遊戲前請學生預測球的反彈方向。</p></div>
+        </article>
+        <article class="mechanismCard">
+          <div class="mechanismTop"><span class="number">07</span><div class="mechanismInfo"><h3>節奏掌握與精準堆疊</h3><p>觀察物件移動並選擇放置時機，適合練習專注、估計、空間對齊與從失誤中調整策略。</p><span class="typeTag">時機與精度</span></div></div>
+          <div class="exampleBar"><strong>Phaser 範例　Stacker</strong><a href="https://labs.phaser.io/phaser4-view.html?src=src%2Fgames%2Fstacker%2Fstacker.js" target="_blank" rel="noopener">另開範例 ↗</a></div>
+          <div class="frameWrap"><iframe loading="lazy" title="節奏掌握與精準堆疊 Phaser 遊戲範例" src="https://labs.phaser.io/phaser4-view.html?src=src%2Fgames%2Fstacker%2Fstacker.js" allow="fullscreen" referrerpolicy="strict-origin-when-cross-origin"></iframe><p class="frameHint">按下按鍵或點擊來放置方塊。重疊越少，塔越容易保持穩定。</p></div>
+        </article>
+        <article class="mechanismCard">
+          <div class="mechanismTop"><span class="number">08</span><div class="mechanismInfo"><h3>隱藏資訊與邏輯推理</h3><p>從鄰近格子的線索推測危險位置，再決定翻開或標記。適合假設、驗證與根據證據推論。</p><span class="typeTag">推理解謎</span></div></div>
+          <div class="exampleBar"><strong>Phaser 範例　Minesweeper</strong><a href="https://labs.phaser.io/phaser4-view.html?src=src%2Fgames%2Fminesweeper%2Fminesweeper.js" target="_blank" rel="noopener">另開範例 ↗</a></div>
+          <div class="frameWrap"><iframe loading="lazy" title="隱藏資訊與邏輯推理 Phaser 遊戲範例" src="https://labs.phaser.io/phaser4-view.html?src=src%2Fgames%2Fminesweeper%2Fminesweeper.js" allow="fullscreen" referrerpolicy="strict-origin-when-cross-origin"></iframe><p class="frameHint">數字代表周圍的炸彈數量。可要求學生先說明推理依據，再做選擇。</p></div>
+        </article>
+        <article class="mechanismCard">
+          <div class="mechanismTop"><span class="number">09</span><div class="mechanismInfo"><h3>空間排列與逐步還原</h3><p>每次移動一片拼圖，透過局部調整達成整體目標。適合空間推理、分解問題與規劃步驟。</p><span class="typeTag">空間規劃</span></div></div>
+          <div class="exampleBar"><strong>Phaser 範例　Sliding Puzzle</strong><a href="https://labs.phaser.io/phaser4-view.html?src=src%2Fgames%2Fsliding%20puzzle%2Fmain.js" target="_blank" rel="noopener">另開範例 ↗</a></div>
+          <div class="frameWrap"><iframe loading="lazy" title="空間排列與逐步還原 Phaser 遊戲範例" src="https://labs.phaser.io/phaser4-view.html?src=src%2Fgames%2Fsliding%20puzzle%2Fmain.js" allow="fullscreen" referrerpolicy="strict-origin-when-cross-origin"></iframe><p class="frameHint">移動相鄰拼圖片段來還原圖像。可引導學生描述每一步的規劃。</p></div>
+        </article>
+        <article class="mechanismCard">
+          <div class="mechanismTop"><span class="number">10</span><div class="mechanismInfo"><h3>區域擴張與顏色策略</h3><p>選擇顏色來擴大相連區域，在有限步數內改變整個棋盤。適合策略比較、分類與結果預測。</p><span class="typeTag">策略解題</span></div></div>
+          <div class="exampleBar"><strong>Phaser 範例　Flood Fill</strong><a href="https://labs.phaser.io/phaser4-view.html?src=src%2Fgames%2Fflood%2Dfill%2Fflood%2Dfill.js" target="_blank" rel="noopener">另開範例 ↗</a></div>
+          <div class="frameWrap"><iframe loading="lazy" title="區域擴張與顏色策略 Phaser 遊戲範例" src="https://labs.phaser.io/phaser4-view.html?src=src%2Fgames%2Fflood%2Dfill%2Fflood%2Dfill.js" allow="fullscreen" referrerpolicy="strict-origin-when-cross-origin"></iframe><p class="frameHint">觀察相鄰色塊如何連成一片。可先預測每種顏色能擴張的範圍。</p></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="designSection" id="design">
+      <div class="designPanel">
+        <div><p class="sectionKicker">03　PUT IT INTO PRACTICE</p><h2>從機制回到學習目標</h2><p>先決定學生要學會什麼，再選擇能讓他們練習這項能力的玩法。相同機制可以服務不同課程，但回饋與任務必須反映該課程的概念。</p></div>
+        <ul class="designList">
+          <li><b>一</b><span>把知識轉成玩家需要使用的線索、規則或選擇。</span></li>
+          <li><b>二</b><span>讓錯誤能帶來資訊，提供再次嘗試和調整策略的機會。</span></li>
+          <li><b>三</b><span>遊戲結束後回顧判斷過程，說明玩法與知識的連結。</span></li>
+        </ul>
+      </div>
+    </section>
+    <footer class="footer">互動範例由 Phaser Labs 提供。首次載入各範例需要網路連線。</footer>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
